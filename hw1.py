@@ -1,9 +1,10 @@
 import numpy as np
-from math import sin, cos, pi
+from math import sin, cos, pi, sqrt 
 from scipy.optimize import fsolve
 from numpy.linalg import lstsq, norm
 import matplotlib.pyplot as plt
 from matplotlib import animation
+import csv
 '''
 L[0:5]: L1, L2, L3, L4, L_BE, L_CE 
 '''
@@ -46,7 +47,7 @@ class Fourbar():
             [self.L[1]*sin(self.theta[1])*omega2],
             [-self.L[1]*cos(self.theta[1])*omega2]
         ])
-        X = lstsq(Av, Bv)
+        X = lstsq(Av, Bv, rcond=-1)
         self.dtheta = np.array([
             0, omega2, X[0][0], X[0][1]
         ])
@@ -61,7 +62,7 @@ class Fourbar():
             [self.L[1]*sin(self.theta[1])*alpha2 + self.L[1]*cos(self.theta[1])*self.dtheta[1]**2 + self.L[2]*cos(self.theta[2])*self.dtheta[2]**2 - self.L[3]*cos(self.theta[3])*self.dtheta[3]**2],
             [-self.L[1]*cos(self.theta[1])*alpha2 + self.L[1]*sin(self.theta[1])*self.dtheta[1]**2 + self.L[2]*sin(self.theta[2])*self.dtheta[2]**2 - self.L[3]*sin(self.theta[3])*self.dtheta[3]**2]
         ])
-        X = lstsq(Aa, Ba)
+        X = lstsq(Aa, Ba, rcond=-1)
         self.ddtheta = np.array([
             0, alpha2, X[0][0], X[0][1]
         ])
@@ -128,7 +129,7 @@ class Fourbar():
             [self.m[3]*Fourbar.g],
             [0]
         ])
-        X = lstsq(Afs, Bfs)
+        X = lstsq(Afs, Bfs, rcond=-1)
         self.staticsforce = np.array([
             X[0].item(0), X[0].item(1), X[0].item(2), X[0].item(3), X[0].item(4), X[0].item(5), X[0].item(6), X[0].item(7), X[0].item(8)
         ])
@@ -158,7 +159,7 @@ class Fourbar():
             [self.m[3]*self.ddy[3] + self.m[3]*Fourbar.g],
             [self.I[3]*self.ddtheta[3]]
         ])
-        X = lstsq(Afs, Bfs)
+        X = lstsq(Afs, Bfs, rcond=-1)
         self.dynamicsforce = np.array([
             X[0].item(0), X[0].item(1), X[0].item(2), X[0].item(3), X[0].item(4), X[0].item(5), X[0].item(6), X[0].item(7), X[0].item(8)
         ])
@@ -210,7 +211,6 @@ class Fourbar():
         if save_as_gif:
             ani.save('animation.gif', writer='imagemagick', fps=60)
         plt.show()
-
 N = 360
 L = np.array([0.3, 0.1, 0.18, 0.25, 0.36, 0.18])
 m = np.array([0, 1.0, 2.0, 0.2])
@@ -229,12 +229,11 @@ Dynamicsforce = list([])
 Shakingforce = list([])
 Shakingforce_abs = []
 Shakingmoment_abs = []
-
 fourbar = Fourbar(L, m, I)
 
 for theta2 in np.linspace(0, 2*pi, N):
     theta[1] = theta2
-    theta, ic, plot_position,  = fourbar.get_position(theta, ic)
+    theta, ic, plot_position = fourbar.get_position(theta, ic)
     dtheta = fourbar.get_angularVelocity(omega2)
     ddtheta = fourbar.get_angularAcceleration(alpha2)
     staticsforce = fourbar.get_staticsForce()
@@ -244,24 +243,37 @@ for theta2 in np.linspace(0, 2*pi, N):
     
     x.append(plot_position[0])
     y.append(plot_position[1])
-    Theta.append(theta)
-    Omega.append(dtheta)
-    Alpha.append(ddtheta)
-    Staticsforce.append(staticsforce)
-    Dynamicsforce.append(dynamicsforce)
-    Shakingforce.append(shakingRes['shakingForce'])
+    Theta.append(theta.tolist())
+    Omega.append(dtheta.tolist())
+    Alpha.append(ddtheta.tolist())
+    Staticsforce.append(staticsforce.tolist())
+    Dynamicsforce.append(dynamicsforce.tolist())
+    Shakingforce.append(shakingRes['shakingForce'].tolist())
     Shakingforce_abs.append(shakingRes['shakingForce_abs'])
     Shakingmoment_abs.append(shakingRes['shakingMoment_abs'])
 
-print(len(Theta), Theta[0:3])
-# print(Omega)
-# print(Alpha)
-# print(Staticsforce)
-# print(Dynamicsforce)
-# print(Shakingforce)
-# print(Shakingforce_abs)
-# print(Shakingmoment_abs)
+forceTag = ['f12x', 'f12y', 'f23x', 'f23y', 'f34x', 'f34y', 'f14x', 'f14y', 'M2']
+for i in np.linspace(0, 3*N/4, 4):
+    print('\nStatics force for theta 0, 90, 180, 270:')
+    print(', '.join('{0}: {1:4.4f}'.format(forceTag[c], k) for c, k in enumerate(Staticsforce[int(i)])))
+
+Theta = np.array(Theta)
+Dynamicsforce = np.array(Dynamicsforce)
+Shakingforce = np.array(Shakingforce)
+
+plt.figure()
+for i in range(0,4):
+    reactionForce = np.sqrt(Dynamicsforce[:,i*2]**2 + Dynamicsforce[:,i*2+1]**2)
+    plt.plot(Theta[:,1], reactionForce)
+
+plt.figure()
+plt.plot(Theta[:,1], Shakingforce[:,0])
+plt.plot(Theta[:,1], Shakingforce[:,1])
+
+plt.figure()
+plt.polar(Theta[:,1], Shakingforce_abs)
+plt.polar(Theta[:,1], Shakingmoment_abs)
 
 
 fourbar.plot_animation(x, y, save_as_gif=False)
-    
+plt.show() 
