@@ -167,12 +167,13 @@ class Fourbar():
 
     def get_shakingForce(self):
         self.Fs = np.array([
-            self.dynamicsforce[0]+self.dynamicsforce[6], self.dynamicsforce[1]+self.dynamicsforce[7]
+            - self.dynamicsforce[0] + self.dynamicsforce[6], - self.dynamicsforce[1] + self.dynamicsforce[7]
         ])
-        self.Fs_abs = norm(self.Fs)
+        # self.Fs_abs = norm(self.Fs)
+        self.Fs_abs = sqrt(self.Fs[0]**2 + self.Fs[1]**2)
 
         r_DA = np.array([
-            self.L[0]*cos(self.theta[0]), self.L[0]*sin(self.theta[0]), 0
+            -self.L[0]*cos(self.theta[0]), self.L[0]*sin(self.theta[0]), 0
         ])
         f_14 = np.array([
             self.dynamicsforce[6], self.dynamicsforce[7], 0
@@ -252,27 +253,48 @@ for theta2 in np.linspace(0, 2*pi, N):
     Shakingforce_abs.append(shakingRes['shakingForce_abs'])
     Shakingmoment_abs.append(shakingRes['shakingMoment_abs'])
 
+# Plotting
+
+
+
 forceTag = ['f12x', 'f12y', 'f23x', 'f23y', 'f34x', 'f34y', 'f14x', 'f14y', 'M2']
 for i in np.linspace(0, 3*N/4, 4):
     print('\nStatics force for theta 0, 90, 180, 270:')
     print(', '.join('{0}: {1:4.4f}'.format(forceTag[c], k) for c, k in enumerate(Staticsforce[int(i)])))
 
 Theta = np.array(Theta)
+Omega = np.array(Omega)
+Alpha = np.array(Alpha)
 Dynamicsforce = np.array(Dynamicsforce)
 Shakingforce = np.array(Shakingforce)
 
+
+
 plt.figure()
-for i in range(0,4):
-    reactionForce = np.sqrt(Dynamicsforce[:,i*2]**2 + Dynamicsforce[:,i*2+1]**2)
-    plt.plot(Theta[:,1], reactionForce)
+plt.plot(Theta[:,1], Theta[:,2])
+plt.plot(Theta[:,1], Theta[:,3])
+plt.legend([r'$\theta_3$', r'$\theta_2$'])
+
+
+# plt.figure()
+# for i in range(0,4):
+#     reactionForce = np.sqrt(Dynamicsforce[:,i*2]**2 + Dynamicsforce[:,i*2+1]**2)
+#     plt.plot(Theta[:,1], reactionForce)
+
+plt.figure()
+plt.plot(Theta[:,1], Dynamicsforce[:,8])
+
+plt.figure()
+plt.plot(Theta[:,1], Shakingmoment_abs)
 
 plt.figure()
 plt.plot(Theta[:,1], Shakingforce[:,0])
 plt.plot(Theta[:,1], Shakingforce[:,1])
+plt.plot(Theta[:,1], Shakingforce_abs)
 
 plt.figure()
 plt.polar(Theta[:,1], Shakingforce_abs)
-plt.polar(Theta[:,1], Shakingmoment_abs)
+# plt.polar(Theta[:,1], Shakingmoment_abs)
 
 
 fourbar.plot_animation(x, y, save_as_gif=False)
