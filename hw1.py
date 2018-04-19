@@ -214,7 +214,7 @@ class Fourbar():
 
 if __name__ == "__main__":
 
-    N = 360
+    N = 3610
     L = np.array([0.3, 0.1, 0.18, 0.25, 0.36, 0.18])
     m = np.array([0, 1.0, 2.0, 0.2])
     I = np.array([0, 0.02, 0.06, 0.005])
@@ -235,6 +235,7 @@ if __name__ == "__main__":
     fourbar = Fourbar(L, m, I)
 
     for theta2 in np.linspace(0, 2*pi, N):
+        print(degrees(theta2) )
         theta[1] = theta2
         theta, ic, plot_position = fourbar.get_position(theta, ic)
         dtheta = fourbar.get_angularVelocity(omega2)
@@ -292,6 +293,7 @@ if __name__ == "__main__":
     # Statics force when theta 2 is equal to 0, 90, 180, 270
     forceTag = ['f12x', 'f12y', 'f23x', 'f23y', 'f34x', 'f34y', 'f14x', 'f14y', 'M2']
     for i in np.linspace(0, 3*N/4, 4):
+        print(degrees(Theta[int(i),1]))
         print('\nStatics force for theta2 = 0, 90, 180, 270:')
         print(', '.join('{0}: {1:4.4f}'.format(forceTag[c], k) for c, k in enumerate(Staticsforce[int(i)])))
 
