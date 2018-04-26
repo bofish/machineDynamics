@@ -105,7 +105,7 @@ class Fourbar():
 
         return self.ddx, self.ddy
 
-    def get_staticsForce(self):
+    def get_staticsForce(self, M4=0):
         # X[0:8]: f12x, f12y, f23x, f23y, f34x, f34y, f14x, f14y, M2
         Afs = np.matrix([
             [1, 0, -1, 0, 0, 0, 0, 0, 0],
@@ -114,9 +114,9 @@ class Fourbar():
             [0, 0, 1, 0, -1, 0, 0, 0, 0],
             [0, 0, 0, 1, 0, -1, 0, 0, 0],
             [0, 0, self.L[4]*sin(self.theta[2]), -self.L[4]*cos(self.theta[2]), -self.L[5]*sin(self.theta[2]), self.L[5]*cos(self.theta[2]), 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, -1, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, -1, 0],
-            [0, 0, 0, 0, -self.L[3]/2*sin(self.theta[3]), self.L[3]/2*cos(self.theta[3]), -self.L[3]/2*sin(self.theta[3]), self.L[3]/2*cos(self.theta[3]), 0]
+            [0, 0, 0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, -self.L[3]/2*sin(self.theta[3]), self.L[3]/2*cos(self.theta[3]), self.L[3]/2*sin(self.theta[3]), -self.L[3]/2*cos(self.theta[3]), 0]
         ])
         Bfs = np.matrix([
             [0],
@@ -127,7 +127,7 @@ class Fourbar():
             [0],
             [0],
             [self.m[3]*Fourbar.g],
-            [0]
+            [-M4]
         ])
         X = lstsq(Afs, Bfs, rcond=-1)
         self.staticsforce = np.array([
@@ -135,7 +135,7 @@ class Fourbar():
         ])
         return self.staticsforce
 
-    def get_dynamicsForce(self):
+    def get_dynamicsForce(self, M4=0):
         # X[0:8]: f12x, f12y, f23x, f23y, f34x, f34y, f14x, f14y, M2
         Afs = np.matrix([
             [1, 0, -1, 0, 0, 0, 0, 0, 0],
@@ -144,9 +144,9 @@ class Fourbar():
             [0, 0, 1, 0, -1, 0, 0, 0, 0],
             [0, 0, 0, 1, 0, -1, 0, 0, 0],
             [0, 0, self.L[4]*sin(self.theta[2]), -self.L[4]*cos(self.theta[2]), -self.L[5]*sin(self.theta[2]), self.L[5]*cos(self.theta[2]), 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, -1, 0, 0],
-            [0, 0, 0, 0, 0, 1, 0, -1, 0],
-            [0, 0, 0, 0, -self.L[3]/2*sin(self.theta[3]), self.L[3]/2*cos(self.theta[3]), -self.L[3]/2*sin(self.theta[3]), self.L[3]/2*cos(self.theta[3]), 0]
+            [0, 0, 0, 0, 1, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, -self.L[3]/2*sin(self.theta[3]), self.L[3]/2*cos(self.theta[3]), self.L[3]/2*sin(self.theta[3]), -self.L[3]/2*cos(self.theta[3]), 0]
         ])
         Bfs = np.matrix([
             [self.m[1]*self.ddx[1]],
@@ -157,7 +157,7 @@ class Fourbar():
             [self.I[2]*self.ddtheta[2]],            
             [self.m[3]*self.ddx[3]],
             [self.m[3]*self.ddy[3] + self.m[3]*Fourbar.g],
-            [self.I[3]*self.ddtheta[3]]
+            [-M4 + self.I[3]*self.ddtheta[3]]
         ])
         X = lstsq(Afs, Bfs, rcond=-1)
         self.dynamicsforce = np.array([
@@ -167,19 +167,19 @@ class Fourbar():
 
     def get_shakingForce(self):
         self.Fs = np.array([
-            - self.dynamicsforce[0] + self.dynamicsforce[6], - self.dynamicsforce[1] + self.dynamicsforce[7]
+            -self.dynamicsforce[0] - self.dynamicsforce[6], -self.dynamicsforce[1] - self.dynamicsforce[7]
         ])
         # self.Fs_abs = norm(self.Fs)
         self.Fs_abs = sqrt(self.Fs[0]**2 + self.Fs[1]**2)
 
         r_DA = np.array([
-            -self.L[0]*cos(self.theta[0]), self.L[0]*sin(self.theta[0]), 0
-        ])
+            -self.L[0]*cos(self.theta[0]), self.L[0]*sin(self.theta[0]), 0])
         f_14 = np.array([
             self.dynamicsforce[6], self.dynamicsforce[7], 0
         ])
         self.Ms = np.array([0, 0, self.dynamicsforce[8]]) + np.cross(r_DA, f_14)
-        self.Ms_abs = self.Ms[2]
+        self.Ms_abs = np.abs(self.Ms[2]) 
+
         shakingOutput = {
             'shakingForce': self.Fs,
             'shakingForce_abs': self.Fs_abs,
@@ -214,7 +214,7 @@ class Fourbar():
 
 if __name__ == "__main__":
 
-    N = 3610
+    N = 360
     L = np.array([0.3, 0.1, 0.18, 0.25, 0.36, 0.18])
     m = np.array([0, 1.0, 2.0, 0.2])
     I = np.array([0, 0.02, 0.06, 0.005])
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     fourbar = Fourbar(L, m, I)
 
     for theta2 in np.linspace(0, 2*pi, N):
-        print(degrees(theta2) )
+        # print(degrees(theta2) )
         theta[1] = theta2
         theta, ic, plot_position = fourbar.get_position(theta, ic)
         dtheta = fourbar.get_angularVelocity(omega2)
@@ -256,15 +256,14 @@ if __name__ == "__main__":
         Shakingforce_abs.append(shakingRes['shakingForce_abs'])
         Shakingmoment_abs.append(shakingRes['shakingMoment_abs'])
 
-    # Plotting
-
-
     Theta = np.array(Theta)
     Omega = np.array(Omega)
     Alpha = np.array(Alpha)
     Dynamicsforce = np.array(Dynamicsforce)
     Shakingforce = np.array(Shakingforce)
     ls = ['-', '--', '-.', ':']
+
+# Plotting
 
     # Angle
     plt.figure()
@@ -330,8 +329,10 @@ if __name__ == "__main__":
     # Shaking force and moment in polar plot
     plt.figure()
     plt.polar(Theta[:,1], Shakingforce_abs)
+    plt.legend(r'$|F_s|$')
+    plt.figure()
     plt.polar(Theta[:,1], Shakingmoment_abs, linestyle=ls[1])
-    plt.legend([r'$|F_s|$', r'$|M_s|$'])
+    plt.legend(r'$|M_s|$')
 
     # Max input torque
     ind_maxM2 = np.argmax(np.absolute(Dynamicsforce[:,8]))
