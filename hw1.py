@@ -1,5 +1,5 @@
 import numpy as np
-from math import sin, cos, pi, sqrt, degrees
+from math import sin, cos, pi, sqrt, degrees, radians
 from scipy.optimize import fsolve
 from numpy.linalg import lstsq, norm
 import matplotlib.pyplot as plt
@@ -68,6 +68,45 @@ class Fourbar():
         ])
         return self.ddtheta
 
+    def get_velocity(self):
+        r_BA = np.array([
+            self.L[1]*cos(self.theta[1]), self.L[1]*sin(self.theta[1]), 0
+        ])
+        r_EB = np.array([
+            self.L[4]*cos(self.theta[2]), self.L[4]*sin(self.theta[2]), 0
+        ])
+        r_G4D = np.array([
+            self.L[3]/2*cos(self.theta[3]), self.L[3]/2*sin(self.theta[3]), 0
+        ])
+        
+        v_B = 0.0 + np.cross([0.0, 0.0, self.dtheta[1]], r_BA)
+        v_E = v_B + np.cross([0.0, 0.0, self.dtheta[2]], r_EB)
+        v_G4 = 0.0 + np.cross([0.0, 0.0, self.dtheta[3]], r_G4D)
+
+        # Verification
+        # r_CD = np.array([
+        #     self.L[3]*cos(self.theta[3]), self.L[3]*sin(self.theta[3]), 0
+        # ])
+        # r_EC = np.array([
+        #     self.L[5]*cos(self.theta[2]), self.L[5]*sin(self.theta[2]), 0
+        # ])
+        # v_C = 0.0 + np.cross([0.0, 0.0, self.dtheta[3]], r_CD)
+        # v_E2 = v_C + np.cross([0.0, 0.0, self.dtheta[2]], r_EC)
+        # print('v_E={}, v_E2={}, error={}'.format(v_E, v_E2, v_E-v_E2))
+
+        self.dx = np.array([
+            0, 0, v_E[0], v_G4[0]
+        ])
+        self.dy = np.array([
+            0, 0, v_E[1], v_G4[1]
+        ])
+        self.dz = np.array([
+            0, 0, v_E[2], v_G4[2]
+        ])
+        # print(self.dx, self.dy, self.dz)
+
+        return self.dx, self.dy
+
     def get_acceleration(self):
         r_BA = np.array([
             self.L[1]*cos(self.theta[1]), self.L[1]*sin(self.theta[1]), 0
@@ -81,16 +120,17 @@ class Fourbar():
         
         a_B = 0.0 + np.cross([0.0, 0.0, self.ddtheta[1]], r_BA) - self.dtheta[1]**2*r_BA
         a_E = a_B + np.cross([0, 0, self.ddtheta[2]], r_EB) - self.dtheta[2]**2*r_EB
-        a_G4 = 0 + np.cross([0, 0, self.ddtheta[3]], r_G4D) - self.dtheta[3]**2*r_G4D
+        a_G4 = 0.0 + np.cross([0, 0, self.ddtheta[3]], r_G4D) - self.dtheta[3]**2*r_G4D
         
-        r_CD = np.array([
-            self.L[3]*cos(self.theta[3]), self.L[3]*sin(self.theta[3]), 0
-        ])
-        r_EC = np.array([
-            self.L[5]*cos(self.theta[2]), self.L[5]*sin(self.theta[2]), 0
-        ])
-        a_C = 0.0 + np.cross([0.0, 0.0, self.ddtheta[3]], r_CD) - self.dtheta[3]**2*r_CD
-        a_E2 = a_C + np.cross([0, 0, self.ddtheta[2]], r_EC) - self.dtheta[2]**2*r_EC
+        # Verification
+        # r_CD = np.array([
+        #     self.L[3]*cos(self.theta[3]), self.L[3]*sin(self.theta[3]), 0
+        # ])
+        # r_EC = np.array([
+        #     self.L[5]*cos(self.theta[2]), self.L[5]*sin(self.theta[2]), 0
+        # ])
+        # a_C = 0.0 + np.cross([0.0, 0.0, self.ddtheta[3]], r_CD) - self.dtheta[3]**2*r_CD
+        # a_E2 = a_C + np.cross([0, 0, self.ddtheta[2]], r_EC) - self.dtheta[2]**2*r_EC
 
         self.ddx = np.array([
             0, 0, a_E[0], a_G4[0]
@@ -165,7 +205,7 @@ class Fourbar():
         ])
         return self.dynamicsforce
 
-    def get_shakingForce(self):
+    def get_shakingForce(self, M4=0):
         self.Fs = np.array([
             -self.dynamicsforce[0] - self.dynamicsforce[6], -self.dynamicsforce[1] - self.dynamicsforce[7]
         ])
@@ -177,8 +217,8 @@ class Fourbar():
         f_14 = np.array([
             self.dynamicsforce[6], self.dynamicsforce[7], 0
         ])
-        self.Ms = np.array([0, 0, self.dynamicsforce[8]]) + np.cross(r_DA, f_14)
-        self.Ms_abs = np.abs(self.Ms[2]) 
+        self.Ms = np.array([0, 0, self.dynamicsforce[8]]) + np.cross(r_DA, f_14) + np.array([0, 0, M4])
+        self.Ms_abs = self.Ms[2]
 
         shakingOutput = {
             'shakingForce': self.Fs,
@@ -187,6 +227,19 @@ class Fourbar():
             'shakingMoment_abs': self.Ms_abs
         }
         return shakingOutput
+        
+    def get_T_by_energy_method(self, M4=0):
+        v_E = np.array([self.dx[2], self.dy[2], 0])
+        v_G4 = np.array([self.dx[3], self.dy[3], 0])
+        a_E = np.array([self.ddx[2], self.ddy[2], 0])
+        a_G4 = np.array([self.ddx[3], self.ddy[3], 0])
+
+        Pw = 0.0 + self.m[2]*Fourbar.g*v_E[1] + self.m[3]*Fourbar.g*v_G4[1]
+        Pk = 0.0 + self.m[2]*np.dot(a_E, v_E) + self.m[3]*np.dot(a_G4, v_G4)
+        Pr = self.I[1]*self.ddtheta[1]*self.dtheta[1] + self.I[2]*self.ddtheta[2]*self.dtheta[2] + self.I[3]*self.ddtheta[3]*self.dtheta[3]
+        Pk_M4 = M4*self.dtheta[3]
+        T2 = (Pw + Pk + Pr - Pk_M4)/self.dtheta[1]
+        return T2
 
     def plot_animation(self, x, y, save_as_gif):
         fig, ax = plt.subplots()
@@ -229,6 +282,7 @@ if __name__ == "__main__":
     Alpha = list([])
     Staticsforce = list([])
     Dynamicsforce = list([])
+    T2 = []
     Shakingforce = list([])
     Shakingforce_abs = []
     Shakingmoment_abs = []
@@ -236,14 +290,21 @@ if __name__ == "__main__":
 
     for theta2 in np.linspace(0, 2*pi, N):
         # print(degrees(theta2) )
+        if theta2 >= radians(150) and theta2 <= radians(240):
+            M4 = 0
+        else:
+            M4 = 0
+
         theta[1] = theta2
         theta, ic, plot_position = fourbar.get_position(theta, ic)
         dtheta = fourbar.get_angularVelocity(omega2)
         ddtheta = fourbar.get_angularAcceleration(alpha2)
-        staticsforce = fourbar.get_staticsForce()
+        staticsforce = fourbar.get_staticsForce(M4)
+        dx, dy = fourbar.get_velocity()
         ddx, ddy = fourbar.get_acceleration()
-        dynamicsforce = fourbar.get_dynamicsForce()
-        shakingRes = fourbar.get_shakingForce()
+        t2 = fourbar.get_T_by_energy_method(M4)
+        dynamicsforce = fourbar.get_dynamicsForce(M4)
+        shakingRes = fourbar.get_shakingForce(M4)
         
         x.append(plot_position[0])
         y.append(plot_position[1])
@@ -252,6 +313,7 @@ if __name__ == "__main__":
         Alpha.append(ddtheta.tolist())
         Staticsforce.append(staticsforce.tolist())
         Dynamicsforce.append(dynamicsforce.tolist())
+        T2.append(t2)
         Shakingforce.append(shakingRes['shakingForce'].tolist())
         Shakingforce_abs.append(shakingRes['shakingForce_abs'])
         Shakingmoment_abs.append(shakingRes['shakingMoment_abs'])
@@ -264,28 +326,21 @@ if __name__ == "__main__":
     ls = ['-', '--', '-.', ':']
 
 # Plotting
-
-    # Angle
-    plt.figure()
-    plt.plot(Theta[:,1], Theta[:,2])
-    plt.plot(Theta[:,1], Theta[:,3], linestyle=ls[1])
-    plt.legend([r'$\theta_3$', r'$\theta_4$'], loc=1)
-    plt.xlabel(r'$\theta_2 (rad)$')
-    plt.ylabel(r'$\theta_3, \theta_4 (rad)$')
-
     # Angular velocity
     plt.figure()
-    plt.plot(Theta[:,1], Omega[:,2])
-    plt.plot(Theta[:,1], Omega[:,3], linestyle=ls[1])
-    plt.legend([r'$\omega_3$', r'$\omega_4$'], loc=1)
+    plt.plot(Theta[:,1], Omega[:,1], ls=ls[0])
+    plt.plot(Theta[:,1], Omega[:,2], ls=ls[1])
+    plt.plot(Theta[:,1], Omega[:,3], ls=ls[2])
+    plt.legend([r'$\omega_2$', r'$\omega_3$', r'$\omega_4$'], loc=1)
     plt.xlabel(r'$\theta_2 (rad)$')
     plt.ylabel(r'$\omega_3, \omega_4 (rad/s)$')
     
     # Angular Acceleration
     plt.figure()
-    plt.plot(Theta[:,1], Alpha[:,2])
-    plt.plot(Theta[:,1], Alpha[:,3], linestyle=ls[1])
-    plt.legend([r'$\alpha_3$', r'$\alpha_2$'], loc=1)
+    plt.plot(Theta[:,1], Alpha[:,1], ls=ls[0])
+    plt.plot(Theta[:,1], Alpha[:,2], ls=ls[1])
+    plt.plot(Theta[:,1], Alpha[:,3], ls=ls[2])
+    plt.legend([r'$\alpha_2$', r'$\alpha_3$', r'$\alpha_2$'], loc=1)
     plt.xlabel(r'$\theta_2 (rad)$')
     plt.ylabel(r'$\alpha_3, \alpha_4 (rad/s^2)$')
 
@@ -305,11 +360,22 @@ if __name__ == "__main__":
     plt.xlabel(r'$\theta_2 (rad)$')
     plt.ylabel(r'$Dynamic Reaction Force (N)$')
 
+    # Dynamic reaction force
+    plt.figure()
+    for i in range(0,2):
+        reactionForce = np.sqrt(Dynamicsforce[:,i*2]**2 + Dynamicsforce[:,i*2+1]**2)
+        plt.plot(Theta[:,1], reactionForce, linestyle=ls[i])
+    plt.legend([r'$Force_{12}$', r'$Force_{32}$'], loc=1)
+    plt.xlabel(r'$\theta_2 (rad)$')
+    plt.ylabel(r'$Reaction\ Force (N)$')
+
     # Input torque
     plt.figure()
-    plt.plot(Theta[:,1], Dynamicsforce[:,8])
+    plt.plot(Theta[:,1], Dynamicsforce[:,8], ls=ls[0])
+    plt.plot(Theta[:,1],np.ones(N)*1.999, ls=ls[1])
     plt.xlabel(r'$\theta_2 (rad)$')
     plt.ylabel(r'$Input\ Torque (N \cdot m)$')
+    plt.legend([r'$Without\ flywheel$', r'$With\ flywheel$'], loc=1)
 
     # Shaking force
     plt.figure()
@@ -325,6 +391,7 @@ if __name__ == "__main__":
     plt.plot(Theta[:,1], Shakingmoment_abs)
     plt.xlabel(r'$\theta_2 (rad)$')
     plt.ylabel(r'$Shaking\ Moment (N \cdot m)$')
+    plt.legend([r'$M_s$'], loc=1)
 
     # Shaking force and moment in polar plot
     plt.figure()
@@ -349,6 +416,6 @@ if __name__ == "__main__":
     theta2_maxMs = degrees(Theta[ind_maxMs, 1])
     print('There are max shaking force {0:4.4f} (N), when theta2 is equal to {1:4.3f} (deg); max shaking moment {2:4.4f} (N-m), when theta2 is equal to {3:4.3f} (deg).'.format(maxFs, theta2_maxFs, maxMs, theta2_maxMs))
 
-    # # Animation
+    # Animation
     # fourbar.plot_animation(x, y, save_as_gif=False)
     plt.show() 
