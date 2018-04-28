@@ -419,3 +419,4 @@ if __name__ == "__main__":
     # Animation
     # fourbar.plot_animation(x, y, save_as_gif=False)
     plt.show() 
+

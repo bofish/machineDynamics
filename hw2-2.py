@@ -211,79 +211,56 @@ if __name__ == '__main__':
 
 # Plotting
     # Angular velocity
-    plt.figure()
-    plt.plot(Theta[:,1], Omega[:,1], ls=ls[0])
-    plt.plot(Theta[:,1], Omega[:,2], ls=ls[1])
-    plt.plot(Theta[:,1], Omega[:,3], ls=ls[2])
-    plt.legend([r'$\omega_2$', r'$\omega_3$', r'$\omega_4$'], loc=1)
-    plt.xlabel(r'$\theta_2 (rad)$')
-    plt.ylabel(r'$\omega_3, \omega_4 (rad/s)$')
-    
+    fig, ax = plt.subplots()
+    ax.plot(Theta[:,1], Omega[:,1], ls=ls[0], label=r'$\omega_2$')
+    ax.plot(Theta[:,1], Omega[:,2], ls=ls[1], label=r'$\omega_3$')
+    ax.plot(Theta[:,1], Omega[:,3], ls=ls[2], label=r'$\omega_4$')
+    ax.set_xlabel(r'$\theta_2 (rad)$')
+    ax.set_ylabel(r'$\omega (rad/s)$')
+    ax.legend(loc=1) 
+
     # Angular Acceleration
-    plt.figure()
-    plt.plot(Theta[:,1], Alpha[:,1], ls=ls[0])
-    plt.plot(Theta[:,1], Alpha[:,2], ls=ls[1])
-    plt.plot(Theta[:,1], Alpha[:,3], ls=ls[2])
-    plt.legend([r'$\alpha_2$', r'$\alpha_3$', r'$\alpha_2$'], loc=1)
-    plt.xlabel(r'$\theta_2 (rad)$')
-    plt.ylabel(r'$\alpha_3, \alpha_4 (rad/s^2)$')
-
-    # Statics force when theta 2 is equal to 0, 90, 180, 270
-    forceTag = ['f12x', 'f12y', 'f23x', 'f23y', 'f34x', 'f34y', 'f14x', 'f14y', 'M2']
-    for i in np.linspace(0, 3*N/4, 4):
-        print(degrees(Theta[int(i),1]))
-        print('\nStatics force for theta2 = 0, 90, 180, 270:')
-        print(', '.join('{0}: {1:4.4f}'.format(forceTag[c], k) for c, k in enumerate(Staticsforce[int(i)])))
-
-    # Dynamic reaction force
-    plt.figure()
-    for i in range(0,4):
-        reactionForce = np.sqrt(Dynamicsforce[:,i*2]**2 + Dynamicsforce[:,i*2+1]**2)
-        plt.plot(Theta[:,1], reactionForce, linestyle=ls[i])
-    plt.legend([r'$Force_{12}$', r'$Force_{23}$', r'$Force_{34}$', r'$Force_{14}$'], loc=1)
-    plt.xlabel(r'$\theta_2 (rad)$')
-    plt.ylabel(r'$Dynamic Reaction Force (N)$')
-
-    # Dynamic reaction force
-    plt.figure()
-    for i in range(0,2):
-        reactionForce = np.sqrt(Dynamicsforce[:,i*2]**2 + Dynamicsforce[:,i*2+1]**2)
-        plt.plot(Theta[:,1], reactionForce, linestyle=ls[i])
-    plt.legend([r'$Force_{12}$', r'$Force_{32}$'], loc=1)
-    plt.xlabel(r'$\theta_2 (rad)$')
-    plt.ylabel(r'$Reaction\ Force (N)$')
+    fig, ax = plt.subplots()
+    ax.plot(Theta[:,1], Alpha[:,1], ls=ls[0], label=r'$\alpha_2$')
+    ax.plot(Theta[:,1], Alpha[:,2], ls=ls[1], label=r'$\alpha_3$')
+    ax.plot(Theta[:,1], Alpha[:,3], ls=ls[2], label=r'$\alpha_4$')
+    ax.set_xlabel(r'$\theta_2 (rad)$')
+    ax.set_ylabel(r'$\alpha (rad/s^2)$')
+    ax.legend(loc=1)
 
     # Input torque
-    plt.figure()
-    plt.plot(Theta[:,1], Dynamicsforce[:,8], ls=ls[0])
-    plt.plot(Theta[:,1],np.ones(N)*1.999, ls=ls[1])
-    plt.xlabel(r'$\theta_2 (rad)$')
-    plt.ylabel(r'$Input\ Torque (N \cdot m)$')
-    plt.legend([r'$Without\ flywheel$', r'$With\ flywheel$'], loc=1)
+    fig, ax = plt.subplots()
+    ax.plot(Theta[:,1], Dynamicsforce[:,8], ls=ls[0], label=r'$T_2$')
+    ax.set_xlabel(r'$\theta_2 (rad)$')
+    ax.set_ylabel(r'$Input\ Torque (N \cdot m)$')
+    ax.legend(loc=1)
+
+    # Dynamic reaction force
+    fig, ax = plt.subplots()
+    reactionForce12 = np.sqrt(Dynamicsforce[:,0]**2 + Dynamicsforce[:,1]**2)
+    reactionForce32 = np.sqrt(Dynamicsforce[:,2]**2 + Dynamicsforce[:,3]**2)
+    ax.plot(Theta[:,1], reactionForce12, ls=ls[0], label=r'$Force_{12}$')
+    ax.plot(Theta[:,1], reactionForce32, ls=ls[1], label=r'$Force_{32}$')
+    ax.set_xlabel(r'$\theta_2 (rad)$')
+    ax.set_ylabel(r'$Reaction\ force (N)$')
+    ax.legend(loc=1)
 
     # Shaking force
-    plt.figure()
-    plt.plot(Theta[:,1], Shakingforce_abs)
-    plt.plot(Theta[:,1], Shakingforce[:,0], linestyle=ls[1])
-    plt.plot(Theta[:,1], Shakingforce[:,1], linestyle=ls[2])
-    plt.legend([r'$|F_{s}|$', r'$F_{sx}$', r'$F_{sy}$'], loc=1)
-    plt.xlabel(r'$\theta_2 (rad)$')
-    plt.ylabel(r'$Shaking\ Force (N)$')
+    fig, ax = plt.subplots()
+    ax.plot(Theta[:,1], Shakingforce_abs, ls=ls[0], label=r'$|F_{s}|$')
+    ax.plot(Theta[:,1], Shakingforce[:,0], ls=ls[1], label=r'$F_{sx}$')
+    ax.plot(Theta[:,1], Shakingforce[:,1], ls=ls[2], label=r'$F_{sy}$')
+    ax.set_xlabel(r'$\theta_2 (rad)$')
+    ax.set_ylabel(r'$Shaking\ Force (N)$')
+    ax.legend(loc=1)
 
     # Shaking Moment
-    plt.figure()
-    plt.plot(Theta[:,1], Shakingmoment_abs, ls=ls[0], label=r'$M_s$')
-    plt.plot(Theta[:,1], M_ctrwt, ls=ls[1], label=r'$M_ctrwt$')
-    plt.xlabel(r'$\theta_2 (rad)$')
-    plt.ylabel(r'$Shaking\ Moment (N \cdot m)$')
-    plt.legend(loc=1)
-
-    # Shaking force and moment in polar plot
-    plt.figure()
-    plt.polar(Theta[:,1], Shakingforce_abs)
-    plt.legend(r'$|F_s|$')
-    plt.figure()
-    plt.polar(Theta[:,1], Shakingmoment_abs, linestyle=ls[1])
-    plt.legend(r'$|M_s|$')
+    fig, ax = plt.subplots()
+    ax.plot(Theta[:,1], Shakingmoment_abs, ls=ls[0], label=r'$M_{s}$')
+    ax.plot(Theta[:,1], M_ctrwt, ls=ls[1], label=r'$M_{ctrwt}$')
+    ax.plot(Theta[:,1], np.zeros(N), ls=ls[2], label=r'$M_{system}$')
+    ax.set_xlabel(r'$\theta_2 (rad)$')
+    ax.set_ylabel(r'$Shaking\ Moment (N \cdot m)$')
+    ax.legend(loc=1)
 
     plt.show() 
