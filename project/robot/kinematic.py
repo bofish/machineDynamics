@@ -93,8 +93,8 @@ if __name__ == '__main__':
     # Linear displacement, velocity, acceleration of CG
     l_CG = [-0.5, -0.5, -0.5]
     q_CG = cal_linear_displacement(l_CG, theta, DH, N)
-    dq_CG = np.gradient(q_CG, axis=2)
-    ddq_CG = np.gradient(dq_CG, axis=2)
+    dq_CG = np.gradient(q_CG, axis=0)
+    ddq_CG = np.gradient(dq_CG, axis=0)
 
     # Plot
     from general import make_ani

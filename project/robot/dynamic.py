@@ -65,8 +65,8 @@ if __name__ == '__main__':
     # Linear displacement, velocity, acceleration of CG
     l_CG = [-0.5, -0.5, -0.5]
     q_CG = km.cal_linear_displacement(l_CG, theta, DH, N)
-    dq_CG = np.gradient(q_CG, axis=2)
-    ddq_CG = np.gradient(dq_CG, axis=2)
+    dq_CG = np.gradient(q_CG, axis=0)
+    ddq_CG = np.gradient(dq_CG, axis=0)
 
     #----- Dynamic Analysis -----#
     m = [1.0, 1.0, 1.0]
@@ -74,10 +74,15 @@ if __name__ == '__main__':
     force = cal_force(theta, alpha, ddq_CG, m, I,  DH, N)
     
     #----- Plot -----#
+    x_CG = q_CG[:, 2, 0]
+    dx_CG = dq_CG[:, 2, 0]
+    ddx_CG = ddq_CG[:, 2, 0]
     plt.figure()
-    plt.plot(time, force[:, 6], label='Torque 1')
-    plt.plot(time, force[:, 7], label='Torque 2')
-    plt.plot(time, force[:, 8], label='Torque 3')
+    plt.plot(time, force[:, 2], label='torque 1')
+    plt.figure()
+    plt.plot(time, force[:, 5], label='torque 2')
+    plt.figure()
+    plt.plot(time, force[:, 8], label='torque 3')
     plt.title('Motor torque by Newton')
     plt.legend()
     plt.show()
