@@ -79,7 +79,7 @@ if __name__ == '__main__':
     P_tar = [[4, -5], [2, 5]]
     T_acc = 0.83479259
     V_tar = 2.99252796
-    N = 1000
+    N = 100
     P, dP, ddP, time = acceleration_plan(P_tar, T_acc, V_tar, N)
 
     #----- Kinematic Analysis -----#
@@ -96,8 +96,15 @@ if __name__ == '__main__':
     dq_CG = np.gradient(q_CG, axis=2)
     ddq_CG = np.gradient(dq_CG, axis=2)
 
-    # Dynamic analysis
-    m = [1.0, 1.0, 1.0]
-    I = [1.0, 1.0, 1.0]
-    force = cal_force(theta, alpha, ddq_CG, m, I,  DH, N)
-
+    # Plot
+    from general import make_ani
+    l = [0.0, 0.0, 0.0]
+    q = cal_linear_displacement(l, theta, DH, N)
+    x = np.concatenate((np.zeros((N,1)), q[:, :, 0]), axis=1)
+    y = np.concatenate((np.zeros((N,1)), q[:, :, 1]), axis=1)
+    z = np.concatenate((np.zeros((N,1)), q[:, :, 2]), axis=1)
+    x_locus = x[:,3]
+    y_locus = y[:,3]
+    z_locus = z[:,3]
+    ani = make_ani(x, y, z, x_locus, y_locus, z_locus, N, save_gif = False)
+    plt.show()
