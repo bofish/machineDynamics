@@ -92,7 +92,7 @@ if __name__ == '__main__':
     alpha = np.gradient(omega, axis=0)
 
     # Linear displacement, velocity, acceleration of CG
-    l_CG = [-0.5, -0.5, -0.5]
+    l_CG = [-0.5, -2.0, -1.0]
     q_CG = km.cal_linear_displacement(l_CG, theta, DH, N)
     dq_CG = np.gradient(q_CG, axis=0)
     ddq_CG = np.gradient(dq_CG, axis=0)
@@ -125,14 +125,14 @@ if __name__ == '__main__':
     # plt.show()
 
     # Animation
-    # from general import make_ani
-    # l = [0.0, 0.0, 0.0]
-    # q = km.cal_linear_displacement(l, theta, DH, N)
-    # x = np.concatenate((np.zeros((N,1)), q[:, :, 0]), axis=1)
-    # y = np.concatenate((np.zeros((N,1)), q[:, :, 1]), axis=1)
-    # z = np.concatenate((np.zeros((N,1)), q[:, :, 2]), axis=1)
-    # x_locus = x[:,3]
-    # y_locus = y[:,3]
-    # z_locus = z[:,3]
-    # ani = make_ani(x, y, z, x_locus, y_locus, z_locus, N, save_gif = False)
+    from general import make_ani
+    l = [0.0, 0.0, 0.0]
+    q = km.cal_linear_displacement(l, theta, DH, N)
+    x = np.concatenate((np.zeros((N,1)), q[:, :, 0]), axis=1)
+    y = np.concatenate((np.zeros((N,1)), q[:, :, 1]), axis=1)
+    z = np.concatenate((np.zeros((N,1)), q[:, :, 2]), axis=1)
+    x_locus = x[:,3]
+    y_locus = y[:,3]
+    z_locus = z[:,3]
+    ani = make_ani(x, y, z, x_locus, y_locus, z_locus, q_CG, N, save_gif = False)
     plt.show()
