@@ -124,7 +124,7 @@ if __name__ == '__main__':
     # plt.legend()
     # plt.show()
 
-    # Animation
+    # Animations
     from general import make_ani
     l = [0.0, 0.0, 0.0]
     q = km.cal_linear_displacement(l, theta, DH, N)
